@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Mô phỏng rút bài tây</title>
+  <style>
+    body {
+      font-family: "Times New Roman", serif;
+      margin: 20px;
+      background: #f5f5f5;
+      color: #000;
+      transition: background 0.5s ease, color 0.5s ease;
+    }
+    body.dark { background: #1e1e1e; color: #f5f5f5; }
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #0B3D91; /* xanh đậm */
+  font-weight: bold;
+}    h2 { margin-top: 20px; color: #8e44ad; }
+    .container { display: flex; gap: 30px; }
+    .col { flex: 1; padding: 15px; background: #fff; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+    body.dark .col { background: #2a2a2a; }
+    button, select {
+      margin: 8px;
+      padding: 8px 16px;
+      font-size: 15px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+    button { background-color: #3498db; color: white; }
+    button:hover { background-color: #2980b9; }
+    select { background: #fff; border: 1px solid #ccc; cursor: pointer; }
+    body.dark select { background: #333; color: #fff; border: 1px solid #777; }
+    #ketqua, #lichsu, #thongke, #ketquaPoker { margin-top: 15px; font-size: 16px; }
+    .card { display: inline-block; margin: 5px; }
+    .card img { width: 90px; border-radius: 6px; box-shadow: 2px 2px 6px rgba(0,0,0,0.3); transition: transform 0.3s; }
+    .card img:hover { transform: scale(1.1); }
+    #toggleTheme {
+      position: fixed; top: 15px; right: 15px;
+      background: #333; color: #fff; border-radius: 50%;
+      width: 38px; height: 38px;
+      display: flex; justify-content: center; align-items: center;
+      cursor: pointer; font-size: 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+    #toggleTheme:hover { background: #555; transform: rotate(20deg); }
+    .fade-card { opacity: 0; transform: translateY(20px); transition: opacity 0.8s ease, transform 0.8s ease; }
+    .fade-card.show { opacity: 1; transform: translateY(0); }
+    .formula { margin-top: 10px; }
+    .prob-frac { color: red; font-weight: bold; }
+    .prob-dec { color: green; font-weight: bold; }
+  
+
+
+.example-cards {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.mini-card {
+  width: 40px;
+  margin: 0 2px;
+  border-radius: 4px;
+  box-shadow: 0 0 4px rgba(0,0,0,0.3);
+}
+
+body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      text-align: center;
+      padding: 10px;
+      font-size: 14px;
+      background: #f0f0f0;
+      color: #333;
+      border-top: 1px solid #ccc;
+
+      /* chống copy / bôi đen */
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+
+
+</style>
+  <!-- MathJax config -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(','\\)']],   // công thức trong dòng
+        displayMath: [['$$','$$']]     // công thức xuống dòng
+      },
+      svg: { fontCache: 'global' }     // dùng SVG, render nhanh
+    };
+  </script>
+  <script id="MathJax-script" async
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+  <div id="toggleTheme">🌙</div>
+ <h1 style="color:#0B3D91; font-weight:bold;">MÔ PHỎNG RÚT BÀI TÂY – XÁC SUẤT POKER</h1>
+
+<div class="quote">
+  <b>--Xác suất là cách làm cho “cảm giác khả năng” của con người trở nên chính xác bằng toán học.--</b>
+</div>
+
+<style>
+.quote {
+  text-align: center;
+  font-size: 18px;
+  color: #d63384; /* màu tím hồng nổi bật */
+  margin: 15px 0;
+}
+</style>
+
+  <div class="container">
+    <!-- Cột trái: Rút bài -->
+    <div class="col">
+      <h2>🎉Rút bài🂡</h2>
+      <label for="mode"><b>Chế độ rút:</b></label>
+      <select id="mode" onchange="capNhatThongKe()">
+        <option value="khonghoanlai">Không hoàn lại</option>
+        <option value="hoanlai">Hoàn lại</option>
+      </select>
+      <br>
+      <button onclick="rutBai(1)">Rút 1 lá</button>
+      <button onclick="rutBai(2)">Rút 2 lá</button>
+      <button onclick="rutBai(3)">Rút 3 lá</button>
+      <button onclick="rutBai(5)">Rút 5 lá</button>
+      <button onclick="choiLai()">Chơi lại</button>
+      <div id="thongke"></div>
+      <div id="ketqua"></div>
+      <h3>Lịch sử rút bài</h3>
+      <div id="lichsu" style="max-height:200px; overflow-y:auto;"></div>
+    </div>
+
+    <!-- Cột phải: Xác suất Poker -->
+    <div class="col">
+      <h2>🎲Xác suất các hạng bài Poker (Xì tẩy)</h2>
+      <select id="handType" onchange="tinhXacSuatPoker()">
+        <option value="">-- Chọn hạng bài --</option>
+        <option value="royal_flush">Thùng phá sảnh (Royal Flush)</option>
+        <option value="four_kind">Tứ quý (Four Kind)</option>
+        <option value="full_house">Cù lũ (Full House)</option>
+        <option value="flush">Thùng (Flush)</option>
+        <option value="straight">Sảnh (Straight)</option>
+        <option value="three_kind">Sám (Three of a kind)</option>
+        <option value="two_pair">Thú (2 đôi)</option>
+        <option value="one_pair">Đôi (One pair)</option>
+        <option value="high_card">Mậu thầu (High card)</option>
+      </select>
+      <div id="ketquaPoker"></div>
+    </div>
+  </div>
+
+  <script>
+    const suitMap = { "♠":"S", "♥":"H", "♦":"D", "♣":"C" };
+    const rankMap = { "A":"A", "J":"J", "Q":"Q", "K":"K", "10":"0" };
+
+    let boBai = [], lichSu = [];
+
+    function gcd(a,b){ return b===0 ? a : gcd(b, a%b); }
+    function C(n, k) { if (k > n) return 0; let res = 1; for (let i = 1; i <= k; i++) res = res * (n - i + 1) / i; return res; }
+
+    function taoBoBai() {
+      const chat = ["♠", "♥", "♦", "♣"];
+      const so = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+      let cards = [];
+      for (let c of chat) for (let s of so) cards.push(s + c);
+      return cards;
+    }
+
+    function choiLai() {
+      boBai = taoBoBai();
+      lichSu = [];
+      document.getElementById("ketqua").innerHTML = "";
+      document.getElementById("lichsu").innerHTML = "";
+      document.getElementById("ketquaPoker").innerHTML = "";
+      capNhatThongKe();
+    }
+
+    function rutBai(n) {
+  let mode = document.getElementById("mode").value; 
+  if (mode === "khonghoanlai" && boBai.length === 0) { 
+    alert("Hết bài rồi!"); return; 
+  }
+
+  let laRut = [];
+  for (let i = 0; i < n; i++) {
+    if (mode === "khonghoanlai") {
+      if (boBai.length === 0) break;
+      let index = Math.floor(Math.random() * boBai.length);
+      laRut.push(boBai[index]);
+      boBai.splice(index, 1);
+    } else { 
+      let fullDeck = taoBoBai();
+      let index = Math.floor(Math.random() * fullDeck.length);
+      laRut.push(fullDeck[index]);
+    }
+  }
+
+ let html = "<div style='display:flex; justify-content:center; gap:8px;'>";
+laRut.forEach(card => {
+  let rank = card.slice(0, -1); 
+  let suit = card.slice(-1);   
+  let rankCode = rankMap[rank] || rank; 
+  let suitCode = suitMap[suit]; 
+  let code = rankCode + suitCode; 
+  let imgUrl = `cards/${code}.png`;  
+  html += `<div class="card"><img class="fade-card" src="${imgUrl}" alt="${card}"></div>`;
+});
+html += "</div>";
+
+  // Tính xác suất
+  let favorable = 1;
+  let total = (mode === "khonghoanlai") ? C(52, n) : Math.pow(52, n);
+  let g = gcd(favorable, total);
+  let tu = favorable / g, mau = total / g;
+  let p = favorable / total;
+
+  html += `<div class="formula">Xác xuất rút được ${n} lá trên là:
+              \\(P = \\dfrac{${tu}}{${mau}} \\;\\; \\approx ${p.toFixed(6)}\\)
+           </div>`;
+
+  const ketquaDiv = document.getElementById("ketqua");
+  ketquaDiv.innerHTML = html;
+  requestAnimationFrame(() => { 
+    document.querySelectorAll(".fade-card").forEach(img => img.classList.add("show")); 
+  });
+
+  lichSu.push(...laRut);
+  capNhatLichSu(); 
+  capNhatThongKe();
+  MathJax.typesetPromise();
+}
+
+
+    function capNhatLichSu() { document.getElementById("lichsu").innerHTML = lichSu.join(", "); }
+    function capNhatThongKe() {
+      let mode = document.getElementById("mode").value;
+      if (mode === "khonghoanlai") document.getElementById("thongke").innerText = "Số lá còn lại: " + boBai.length;
+      else document.getElementById("thongke").innerText = "Chế độ hoàn lại: luôn đủ 52 lá.";
+    }
+
+    const totalHands = C(52,5);
+
+    function tinhXacSuatPoker(){
+      const type = document.getElementById("handType").value;
+      if (!type) { document.getElementById("ketquaPoker").innerHTML = ""; return; }
+      let favorable = 0, formula = "", explain = "";
+
+      switch(type){
+        case "royal_flush":
+          favorable = 4;
+          formula = "$$4$$";
+           handName = "thùng phá sảnh";
+	explain = "Thùng phá sảnh: 10–J–Q–K–A đồng chất.";
+          break; 
+        case "four_kind":
+          favorable = 13 * C(48,1);
+          formula = "$$13 \\times C_{4}^{4} \\times 12 \\times C_{4}^{1}$$";
+           handName = "tứ quý";
+explain = "Tứ quý: 4 lá cùng hạng + 1 lá lẻ.";
+          break;
+        case "full_house":
+          favorable = 13 * C(4,3) * 12 * C(4,2);
+          formula = "$$13 \\times C_{4}^{3} \\times 12 \\times C_{4}^{2}$$";
+ handName = "Cù lũ";          
+explain = "Cù lũ: 1 bộ ba + 1 đôi.";
+          break;
+        case "flush":
+          favorable = 4 * C(13,5) - 40;
+          formula = "$$4 \\times (C_{13}^{5} - 10)$$";
+          handName = "thùng";
+ explain = "Thùng: 5 lá cùng chất, không liên tiếp.";
+          break; 
+        case "straight":
+          favorable = 10 * (4**5) - 40;
+          formula = "$$10 \\times (C_{4}^{1})^5 - 40$$";
+           handName = "sảnh";
+explain = "Sảnh: 5 lá liên tiếp khác chất.";
+          break; 
+        case "three_kind":
+          favorable = 13 * C(4,3) * C(12,2) * (4**2);
+          formula = "$$13 \\times C_{4}^{3} \\times C_{12}^{2} \\times (C_{4}^{1})^2$$";
+           handName = "sám";
+explain = "Sám: 3 lá cùng hạng + 2 lá khác.";
+          break;
+        case "two_pair":
+          favorable = C(13,2) * (C(4,2)**2) * 11 * 4;
+          formula = "$$C_{13}^{2} \\times (C_{4}^{2})^2 \\times 11 \\times C_{4}^{1}$$";
+ handName = "thú";          
+explain = "Thú: 2 đôi + 1 lá lẻ.";
+          break;
+        case "one_pair":
+          favorable = 13 * C(4,2) * C(12,3) * (4**3);
+          formula = "$$13 \\times C_{4}^{2} \\times C_{12}^{3} \\times (C_{4}^{1})^3$$";
+          explain = "Đôi: 1 đôi + 3 lá khác.";
+          break;
+        case "high_card":
+          favorable = totalHands - (4+13*C(48,1)+13*C(4,3)*12*C(4,2)+4*C(13,5)-40+(10*(4**5)-40)+13*C(4,3)*C(12,2)*(4**2)+C(13,2)*(C(4,2)**2)*11*4+13*C(4,2)*C(12,3)*(4**3));
+          formula = "$$C_{52}^{5} - (\\text{các trường hợp trên})$$";
+ handName = "mậu thầu";          
+explain = "Mậu thầu: không có đôi, sảnh, thùng…";
+          break;
+      }
+
+      let g = gcd(favorable, totalHands);
+let tu = favorable / g, mau = totalHands / g;
+let p = favorable / totalHands;
+
+// HTML kết quả
+let htmlResult = "";
+htmlResult += "<div class='formula'>Số kêt quả thuận lợi: " + formula + "</div>";
+htmlResult += "<div class='formula'>Xác suất 5 lá được chọn tạo thành một " + handName + " là:</div>";
+htmlResult += "<div class='formula' style='text-align:center;'>\\( P = \\dfrac{" + tu + "}{" + mau + "} \\;\\; \\approx \\) " +
+              "<span class='prob-dec'><b>" + p.toFixed(6) + "</b></span></div>";
+htmlResult += "<div><br><b>Giải thích:</b> " + explain + "</br></div>";
+
+// Hình minh họa cho từng loại tay bài
+let exampleCards = "";
+switch(type){
+  case "royal_flush":
+    exampleCards = ["AS","KS","QS","JS","0S"]; break;
+  case "four_kind":
+    exampleCards = ["9S","9H","9D","9C","2H"]; break;
+  case "full_house":
+    exampleCards = ["3S","3H","3D","7S","7H"]; break;
+  case "flush":
+    exampleCards = ["2H","5H","8H","0H","QH"]; break;
+  case "straight":
+    exampleCards = ["6S","7D","8H","9C","0S"]; break;
+  case "three_kind":
+    exampleCards = ["4S","4H","4D","7S","9H"]; break;
+  case "two_pair":
+    exampleCards = ["5S","5H","9D","9C","2S"]; break;
+  case "one_pair":
+    exampleCards = ["6S","6H","3D","8C","JS"]; break;
+  case "high_card":
+    exampleCards = ["2S","5H","7D","9C","QS"]; break;
+}
+
+// Thêm div hiển thị hình ảnh mini, căn giữa, fade-in
+if(exampleCards.length){
+  htmlResult += "<div class='example-cards' style='text-align:center;'>";
+  exampleCards.forEach(code => {
+    htmlResult += `<img class="mini-card fade-card" src="cards/${code}.png" alt="${code}">`;
+  });
+  htmlResult += "</div>";
+}
+
+document.getElementById("ketquaPoker").innerHTML = htmlResult;
+
+// Fade-in cho mini cards
+requestAnimationFrame(() => { 
+  document.querySelectorAll(".mini-card.fade-card").forEach(img => img.classList.add("show")); 
+});
+
+MathJax.typesetPromise();
+
+
+}
+
+
+
+    document.getElementById("toggleTheme").addEventListener("click", function(){
+      document.body.classList.toggle("dark");
+      this.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
+    });
+
+    choiLai();
+  </script>
+<meta charset="UTF-8">
+<footer id="copyright"></footer>
+
+<script>
+  // Chuỗi gốc
+  const original = "© 2025 Lê Văn Quý- THPT Bình Sơn, Quảng Ngãi+GPT. All rights reserved.";
+
+  // Mã hóa sang Base64 UTF-8
+  const bytes = new TextEncoder().encode(original);
+  const b64 = btoa(String.fromCharCode(...bytes));
+  console.log("Base64 UTF-8:", b64); 
+
+  // Giải mã Base64 UTF-8
+  const decodedBytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const decodedText = new TextDecoder("utf-8").decode(decodedBytes);
+
+  document.getElementById("copyright").textContent = decodedText;
+</script>
+</body>
+</html>
