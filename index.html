@@ -142,7 +142,7 @@ body {
 
     <!-- Cột phải: Xác suất Poker -->
     <div class="col">
-      <h2>🎲Xác suất các hạng bài Poker (Xì tẩy)</h2>
+      <h2>🎲Xác suất các hạng bài Poker (5 lá)</h2>
       <select id="handType" onchange="tinhXacSuatPoker()">
         <option value="">-- Chọn hạng bài --</option>
         <option value="royal_flush">Thùng phá sảnh (Royal Flush)</option>
@@ -386,12 +386,12 @@ MathJax.typesetPromise();
   const bytes = Uint8Array.from(atob(b64Copyright), c => c.charCodeAt(0));
   const text  = new TextDecoder("utf-8").decode(bytes);
 
-  // Kiểm tra nhanh trên console: phải in đúng "© 2025 Lê Văn Quý+GPT. All rights reserved."
+ 
   console.log(text);
 
   document.getElementById("copyright").textContent = text;
 
-  // (tuỳ chọn) chặn chuột phải & Ctrl+C như bạn đã làm
+ 
   document.addEventListener("contextmenu", e => e.preventDefault());
   document.addEventListener("keydown", e => {
     if (e.ctrlKey && e.key.toLowerCase() === "c") {
@@ -403,4 +403,5 @@ MathJax.typesetPromise();
 
 </body>
 </html>
+
 
